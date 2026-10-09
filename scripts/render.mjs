@@ -39,7 +39,11 @@ em{font-style:normal;color:${C.accent}}
 .item .n{color:${C.accent};font-weight:800;min-width:56px}
 .cta-big{font-size:66px;font-weight:800;line-height:1.5;text-align:center}
 .cta-small{margin-top:70px;font-size:38px;font-weight:500;line-height:1.6;color:${C.dim};text-align:center}
+.hook{font-size:44px;font-weight:700;line-height:1.4;text-align:center;color:${C.accent};
+  padding:18px 36px;border:3px solid ${C.accent};border-radius:999px;margin-bottom:84px;letter-spacing:-.01em}
 `;
+// 첫 장 상단 후킹 문구 (선택)
+const hookTag = (s) => (s.hook ? `<div class="hook">${esc(s.hook)}</div>` : "");
 
 function slideBody(s, i, total) {
   const pageNo = total > 1 ? `<span>${i + 1} / ${total}</span>` : "<span></span>";
@@ -47,11 +51,11 @@ function slideBody(s, i, total) {
   const mark = `<div class="mark">${HANDLE}</div>`;
   let inner = "";
   if (s.kind === "cover") {
-    inner = `<div class="cover-bar"></div><div class="cover">${fmt(s.text)}</div>`;
+    inner = `${s.hook ? hookTag(s) : '<div class="cover-bar"></div>'}<div class="cover">${fmt(s.text)}</div>`;
     return `${top}${inner}${mark}${total > 1 ? '<div class="swipe">넘겨보기 →</div>' : ""}`;
   }
   if (s.kind === "text") inner = `<div class="text">${fmt(s.text)}</div>`;
-  if (s.kind === "single") inner = `<div class="single">${fmt(s.text)}</div>`;
+  if (s.kind === "single") inner = `${hookTag(s)}<div class="single">${fmt(s.text)}</div>`;
   if (s.kind === "list")
     inner = `<div class="list">${s.items
       .map((t, k) => `<div class="item"><span class="n">${s.start + k}.</span><span>${fmt(t)}</span></div>`)
