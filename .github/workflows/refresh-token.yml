@@ -1,0 +1,21 @@
+name: refresh-token
+
+# long-lived 토큰은 60일 유효 → 매월 1일, 15일에 갱신
+on:
+  schedule:
+    - cron: "0 3 1,15 * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh and store token
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }} # fine-grained PAT, 이 저장소 Secrets: Read and write
+        run: |
+          new=$(python3 scripts/refresh_token.py)
+          echo "::add-mask::$new"
+          printf '%s' "$new" | gh secret set IG_ACCESS_TOKEN --repo "${{ github.repository }}"
