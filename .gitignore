@@ -2,3 +2,5 @@
 .env
 node_modules/
 HANDOFF.md
+schedule_captions.txt
+reels/
