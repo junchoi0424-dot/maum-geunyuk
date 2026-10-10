@@ -3,6 +3,7 @@
 
   python3 scripts/reel.py 011            → reels/011.mp4
   python3 scripts/reel.py 011 --still    → 마지막 장면 미리보기 PNG만
+  python3 scripts/reel.py 011 --hook "정체기, 사실 좋은 신호예요" --tag C   → reels/011_C.mp4 (후킹 A/B 테스트용)
 
 구성: 0초 후킹(캡션 첫 줄) → 1초부터 문장 한 줄씩 등장 → 저장 유도 + 핸들
 첫 장(single/cover) 문장을 쓰며, *강조*는 라임색으로 표시한다.
@@ -115,7 +116,8 @@ def frame(t, hook, lines, duration):
     end_lines = LINE_START + (k - 1) * LINE_GAP + FADE
     q = ease((t - end_lines - 0.6) / 0.5)
     if q > 0:
-        d.text((W / 2, 1490), "저장해두고 힘들 때 꺼내 보세요", font=F_SMALL, fill=blend(DIM, q), anchor="mm")
+        cta = "힘들 때 다시 꺼내 보세요" if "저장" in hook else "저장해두고 힘들 때 꺼내 보세요"
+        d.text((W / 2, 1490), cta, font=F_SMALL, fill=blend(DIM, q), anchor="mm")
         d.text((W / 2, 1560), HANDLE, font=F_SMALL, fill=blend(ACCENT, q), anchor="mm")
     return img
 
@@ -148,15 +150,19 @@ def audio(path, duration, n_lines):
 
 
 def main():
-    pid = sys.argv[1]
+    args = sys.argv[1:]
+    pid = args[0]
+    opt = lambda k: args[args.index(k) + 1] if k in args else None
     posts = {p["id"]: p for p in json.loads((ROOT / "posts.json").read_text())}
     post = posts[pid]
     hook, lines, duration = build(post)
+    hook = opt("--hook") or hook
+    name = f"{pid}_{opt('--tag')}" if opt("--tag") else pid
     outdir = ROOT / "reels"
     outdir.mkdir(exist_ok=True)
 
     if "--still" in sys.argv:
-        frame(duration - 0.1, hook, lines, duration).save(outdir / f"{pid}_still.png")
+        frame(duration - 0.1, hook, lines, duration).save(outdir / f"{name}_still.png")
         return
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -166,7 +172,7 @@ def main():
             frame(i / FPS, hook, lines, duration).save(tmp / f"{i:04d}.png")
         wav = tmp / "a.wav"
         audio(wav, duration, sum(1 for l in lines if l.strip()))
-        out = outdir / f"{pid}.mp4"
+        out = outdir / f"{name}.mp4"
         subprocess.run([
             "ffmpeg", "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", str(tmp / "%04d.png"),
             "-i", str(wav), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-profile:v", "high",
